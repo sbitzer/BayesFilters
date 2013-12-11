@@ -107,7 +107,7 @@ end
 if isnonemptyfield(options,'alpha')
     alpha = options.alpha;
 else
-    alpha = 1;
+    alpha = .01;
 end
 if isnonemptyfield(options,'kappa')
     kappa = options.kappa;
@@ -117,7 +117,7 @@ end
 if isnonemptyfield(options,'beta')
     beta = options.beta;
 else
-    beta = 0;
+    beta = 2;
 end
 if isnonemptyfield(options,'dt')
     dt = options.dt;

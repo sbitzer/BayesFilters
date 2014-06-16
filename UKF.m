@@ -99,6 +99,8 @@
 %                   eigenvalues <=0 to 1e-15, should ideally be 0, any
 %                   value above 0 may indicate numerical problems which may
 %                   make the results unreliable
+% author:
+%       Sebastian Bitzer (bitzer@cbs.mpg.de)
 function [mX, P, peY, peX, mYpred, mXpred, Ppred, Pypred, K, nposdeferr] = ...
             UKF(Y, T, x0, P0, ffun, gfun, Q, R, options)
 

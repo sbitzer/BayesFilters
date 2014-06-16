@@ -82,7 +82,7 @@ R = eye(nd) * noisestd;
 
 ukfopt = struct([]);
 
-[mX, P, peY, peX, mYpred, mXpred, Ppred, Pypred, nposdeferr] = ...
+[mX, P, peY, peX, mYpred, mXpred, Ppred, Pypred, K, nposdeferr] = ...
     UKF(Ynoise, T, x0ukf, P0, ffun, gfun, Q, R, ukfopt);
 
 

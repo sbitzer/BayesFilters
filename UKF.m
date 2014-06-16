@@ -1,4 +1,4 @@
-% [mX, P, peY, peX, mYpred, mXpred, Ppred, Pypred, nposdeferr] = ...
+% [mX, P, peY, peX, mYpred, mXpred, Ppred, Pypred, K, nposdeferr] = ...
 %            UKF(Y, T, x0, P0, ffun, gfun, Q, R, options)
 %
 % adaptive UKF based on allowing multiplicative noise by letting the model
@@ -41,7 +41,12 @@
 %                   obtain x_t+1 from x_t and f
 %       gfun    -   observation function (handle)
 %                       y = gfun(x, v, gopt)
-%       Q       -   covariance matrix of the transition density
+%       Q       -   covariance matrix of the transition density, note that
+%                   this is defined as the covariance of the noise process
+%                   after t=1 time units and is independent of the
+%                   integration step size dt, to implement this, Q is
+%                   divided by dt before it used in the discretised
+%                   numerical integration within the filter prediction step
 %                   [nx,nx] = size
 %       R       -   covariance matrix of the observation density
 %                   [ny,ny] = size
@@ -62,7 +67,8 @@
 %       mX      -   means of posterior state densities
 %                   [nx, nt] = size
 %       P       -   covariance matrices of posterior state densities
-%                   a cell containing [nx,nx]-sized matrices
+%                   a cell containing [nx,nx]-sized matrices, depends on dt
+%                   as further described below for Ppred
 %                   [1, nt] = size
 %       peY     -   observation prediction errors
 %                   [ny, nt] = size
@@ -75,9 +81,16 @@
 %                   [nx, nt] = size
 %       Ppred   -   covariances of the dynamics prediction densities
 %                   a cell containing [nx,nx]-sized matrices
+%                   note that Ppred depends on the size of the time steps
+%                   defined in T; in particular, Ppred will contain a 
+%                   contribution from Q, but this will be in the order of 
+%                   N*dt*Q where N is the number of steps of size dt which
+%                   need to be made when going from time T(i) to T(i+1)
 %                   [1, nt] = size
 %       Pypred  -   covariances of the observation prediction densities
 %                   a cell containing [ny,ny]-sized matrices
+%                   [1, nt] = size
+%       K       -   cell array of Kalman gain matrices with dims [nx, ny]
 %                   [1, nt] = size
 %   nposdeferr  -   number of errors caught, because the estimated
 %                   covariance matrix of the posterior state density was
@@ -86,7 +99,7 @@
 %                   eigenvalues <=0 to 1e-15, should ideally be 0, any
 %                   value above 0 may indicate numerical problems which may
 %                   make the results unreliable
-function [mX, P, peY, peX, mYpred, mXpred, Ppred, Pypred, nposdeferr] = ...
+function [mX, P, peY, peX, mYpred, mXpred, Ppred, Pypred, K, nposdeferr] = ...
             UKF(Y, T, x0, P0, ffun, gfun, Q, R, options)
 
 %% extract options and parameters
@@ -124,6 +137,11 @@ if isnonemptyfield(options,'dt')
 else
     dt = .1;
 end
+if isnonemptyfield(options, 'verbose')
+    verbose = options.verbose;
+else
+    verbose = 1;
+end
 
 
 %% initialise
@@ -139,7 +157,7 @@ wc = [lambda/(nxa + lambda) + 1 - alpha^2 + beta;...
 Wc = diag(wc);
 
 % determine sqrt of initial covariance using lower-triangular chol
-A = chol( blkdiag(P0, Q, R), 'lower');
+A = chol( blkdiag(P0, (1/dt) * Q, R), 'lower');
 
 % initial sigma points
 XS = bsxfun(@plus, [x0; zeros(nx+ny,1)], sqrtc*[zeros(nxa,1) A -A]);
@@ -147,12 +165,15 @@ XS = bsxfun(@plus, [x0; zeros(nx+ny,1)], sqrtc*[zeros(nxa,1) A -A]);
 
 %% loop over observations
 % for printing progress
-fprintf('filtering completed:   0%%')
-deletePast = sprintf('\b')*ones(1,4);
+if verbose
+    fprintf('filtering completed:   0%%')
+    deletePast = sprintf('\b')*ones(1,4);
+end
 
 Dt = diff([0,T]);
 mX = nan(nx,nt);
 P = cell(1,nt);
+K = cell(1,nt);
 mXpred = nan(nx,nt);
 mYpred = nan(ny,nt);
 Ppred = cell(1,nt);
@@ -170,7 +191,7 @@ for t = 1:nt
     for it = 1:nsteps
         % ffun(x, w, fopt), x - state, w - noise
         dXS = [ ffun(XS(1:nx, :), XS(nx+(1:nx), :), fopt); ...
-                XS(nx+1:end, :)];
+                zeros(nx + ny, 2 * nxa + 1)];
         
         % integrate (noise must be accounted for in dXS)
         XS = XS + dtt * dXS;
@@ -187,13 +208,13 @@ for t = 1:nt
     YSerr = bsxfun(@minus, YS, mYpred(:,t));
     Pypred{t} = YSerr * Wc * YSerr';
     Cy = XSerr * Wc * YSerr';
-    K = Cy / Pypred{t};   % implmements Cy * inv(Pypred{t})
+    K{t} = Cy / Pypred{t};   % implmements Cy * inv(Pypred{t})
     
     peY(:,t) = Y(:,t) - mYpred(:,t);
-    peX(:,t) = K * peY(:,t);
+    peX(:,t) = K{t} * peY(:,t);
     
     mX(:,t) = mXpred(:,t) + peX(:,t);
-    P{t} = Ppred{t} - K * Cy';   % K * Cy' = K * Pypred{t} * K';
+    P{t} = Ppred{t} - K{t} * Cy';   % K * Cy' = K * Pypred{t} * K';
     
     
     %% prepare next integration step by computing sigma points
@@ -229,12 +250,14 @@ for t = 1:nt
     
     %% printing progress
     % only print if full per cents changed
-    if diff(floor([t-1,t]/(nt/100)))>=1
+    if verbose && diff(floor([t-1,t]/(nt/100)))>=1
         fprintf('%s%3d%%',deletePast,round(t/nt*100));
     end
 end
 
-fprintf('\n');  % end of printing progress
+if verbose
+    fprintf('\n');  % end of printing progress
+end
 
 if nposdeferr > 0
     warning('UKF:posdeferr', 'numerical errors fixed at runtime: made P{t} positive definite at %d time points', nposdeferr)

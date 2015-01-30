@@ -80,7 +80,7 @@
 % author:
 %       Sebastian Bitzer (bitzer@cbs.mpg.de)
 function [Resp, RT, nposdeferr] = ...
-            UKFResponse(Y, T, x0, P0, ffun, gfun, Q, R, options)
+            UKFResponse(Y, T, x0, P0, ffun, gfun, Q, R, crit, options)
 
 %% extract options and parameters
 [ny,nt] = size(Y);

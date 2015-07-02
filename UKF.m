@@ -100,7 +100,7 @@
 %                   value above 0 may indicate numerical problems which may
 %                   make the results unreliable
 % author:
-%       Sebastian Bitzer (bitzer@cbs.mpg.de)
+%       Copyright (C) 2015 Sebastian Bitzer
 function [mX, P, peY, peX, mYpred, mXpred, Ppred, Pypred, K, nposdeferr] = ...
             UKF(Y, T, x0, P0, ffun, gfun, Q, R, options)
 

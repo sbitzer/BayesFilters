@@ -46,6 +46,8 @@
 %           .neff - threshold for effective number of samples, (resample, 
 %                   if effective number of samples drops below neff)
 %                   [default: 2/3 * np]
+%
+% Copyright (C) 2015 Sebastian Bitzer
 function [Pstore,Neff] = SIR_PF(Y,T,P0,ffun,gfun,Q,R,options)
 
 nt = length(T);

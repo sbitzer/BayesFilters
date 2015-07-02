@@ -1,4 +1,6 @@
 % this script demonstrate the use of the UKF function
+%
+% Copyright (C) 2015 Sebastian Bitzer
 
 %% define nonlinear model
 % setup Hopfield network

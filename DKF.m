@@ -10,6 +10,8 @@
 %
 % note that the means and covariances stored in mYpred and Pypred define
 % the marginal likelihood distribution p(y_t|Y_t-1)
+%
+% Copyright (C) 2015 Sebastian Bitzer
 function [mX, Pstore ,peY, peX, mYpred, mXpred, Ppred, Pypred] = ...
             DKF(Y, x0, P0, A, B, C, Q, R)
 

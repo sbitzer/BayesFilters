@@ -36,7 +36,7 @@
 %       X       -   time series of hidden states resulting from model
 %                   [nx, nt] = size
 % author:
-%       Sebastian Bitzer (bitzer@cbs.mpg.de)
+%       Copyright (C) 2015 Sebastian Bitzer
 function [Y, X] = integrateDynamicModel(ffun, gfun, fopt, gopt, x0, T, options)
 
 nx = numel(x0);

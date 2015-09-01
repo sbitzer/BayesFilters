@@ -195,6 +195,11 @@ peX = nan(nx,nt);
 peY = nan(ny,nt);
 nposdeferr = 0;
 for t = 1:nt
+    % stop inference at nans
+    if any(isnan(Y(:, t)))
+        break
+    end
+    
     %% integration (prediction) step
     % determine step size for integration until current measurement
     nsteps = ceil(Dt(t) / dt);

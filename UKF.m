@@ -45,7 +45,7 @@
 %                   this is defined as the covariance of the noise process
 %                   after t=1 time units and is independent of the
 %                   integration step size dt, to implement this, Q is
-%                   divided by dt before it used in the discretised
+%                   divided by dt before it is used in the discretised
 %                   numerical integration within the filter prediction step
 %                   [nx,nx] = size
 %       R       -   covariance matrix of the observation density
